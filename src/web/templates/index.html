@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FACEIT CS2 Player Classifier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(255, 85, 0, 0.2) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(255, 119, 0, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(255, 85, 0, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            background: linear-gradient(145deg, #1a1a1a 0%, #151515 100%);
+            border-radius: 12px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 85, 0, 0.3);
+            max-width: 950px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff5500 0%, #ff7700 50%, #ff5500 100%);
+            box-shadow: 0 0 15px rgba(255, 85, 0, 0.6);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1f1f1f 0%, #1a1a1a 100%);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+            border-bottom: 3px solid #ff5500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 85, 0, 0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 12px;
+            font-weight: 800;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 0 30px rgba(255, 85, 0, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            font-size: 1.15em;
+            color: #d4d4d4;
+            position: relative;
+            z-index: 1;
+            font-weight: 400;
+        }
+
+        .content {
+            padding: 45px;
+            min-height: 30vh;
+        }
+
+        .search-box {
+            margin-bottom: 35px;
+        }
+
+        .search-box label {
+            display: block;
+            font-size: 0.95em;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .input-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 22px;
+            font-size: 1.05em;
+            border: 2px solid #2d2d2d;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            background: #232323;
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .input-group input::placeholder {
+            color: #777777;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #ff5500;
+            box-shadow: 0 0 0 4px rgba(255, 85, 0, 0.2), 0 4px 12px rgba(255, 85, 0, 0.3);
+            background: #2a2a2a;
+        }
+
+        .btn {
+            padding: 16px 45px;
+            font-size: 1em;
+            font-weight: 800;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #ff5500 0%, #ff6a00 100%);
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            box-shadow: 0 5px 20px rgba(255, 85, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 85, 0, 0.6);
+            background: linear-gradient(135deg, #ff6600 0%, #ff7700 100%);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 25px;
+            color: #d4d4d4;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 5px solid #2a2a2a;
+            border-top: 5px solid #ff5500;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            display: none;
+            background: rgba(220, 38, 38, 0.15);
+            border: 2px solid #dc2626;
+            color: #ff8888;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .player-card {
+            background: linear-gradient(135deg, #242424 0%, #1f1f1f 100%);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #333333;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .player-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(180deg, #ff5500 0%, #ff7700 100%);
+            box-shadow: 0 0 15px rgba(255, 85, 0, 0.6);
+        }
+
+        .player-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .player-name {
+            font-size: 2em;
+            font-weight: 800;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 10px rgba(255, 85, 0, 0.3);
+        }
+
+        .player-country {
+            font-size: 1.1em;
+            color: #aaaaaa;
+            font-weight: 500;
+        }
+
+        .player-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #1a1a1a 0%, #151515 100%);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #2d2d2d;
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            border-color: #ff5500;
+            box-shadow: 0 0 20px rgba(255, 85, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #aaaaaa;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: #ff5500;
+            text-shadow: 0 0 10px rgba(255, 85, 0, 0.4);
+        }
+
+        .prediction-card {
+            background: linear-gradient(135deg, #242424 0%, #1f1f1f 100%);
+            border: 3px solid #ff5500;
+            border-radius: 10px;
+            padding: 35px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 85, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .prediction-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 85, 0, 0.1) 0%, transparent 70%);
+        }
+
+        .prediction-label {
+            font-size: 1.2em;
+            color: #aaaaaa;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            position: relative;
+        }
+
+        .predicted-class {
+            font-size: 3.5em;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ff5500 0%, #ff8800 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            text-shadow: 0 0 30px rgba(255, 85, 0, 0.5);
+        }
+
+        .confidence {
+            font-size: 1.4em;
+            color: #d4d4d4;
+            margin-bottom: 25px;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .confidence strong {
+            color: #ff5500;
+            font-weight: 800;
+        }
+
+        .probabilities {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 25px;
+            position: relative;
+        }
+
+        .prob-item {
+            text-align: center;
+        }
+
+        .prob-label {
+            font-size: 0.95em;
+            color: #aaaaaa;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .prob-bar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: conic-gradient(#ff5500 0deg, #2a2a2a 0deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            position: relative;
+            border: 3px solid #333333;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .prob-value {
+            font-size: 1.3em;
+            font-weight: 800;
+            color: #ffffff;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .section {
+            background: linear-gradient(135deg, #242424 0%, #1f1f1f 100%);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid #333333;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #2d2d2d;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-size: 0.95em;
+            font-weight: 700;
+            margin: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .badge-strength {
+            background: rgba(34, 197, 94, 0.25);
+            color: #4ade80;
+            border: 2px solid #22c55e;
+        }
+
+        .badge-weakness {
+            background: rgba(239, 68, 68, 0.25);
+            color: #ff8888;
+            border: 2px solid #ef4444;
+        }
+
+        .recommendation {
+            background: linear-gradient(135deg, #1a1a1a 0%, #151515 100%);
+            padding: 18px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border-left: 5px solid #ff5500;
+            color: #d4d4d4;
+            font-weight: 500;
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .recommendation:hover {
+            background: linear-gradient(135deg, #1f1f1f 0%, #1a1a1a 100%);
+            border-left-width: 8px;
+            padding-left: 21px;
+            box-shadow: 0 4px 15px rgba(255, 85, 0, 0.2);
+        }
+
+        .stat-comparison {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #1a1a1a;
+            border-radius: 6px;
+            border-left: 3px solid #2d2d2d;
+            transition: all 0.3s ease;
+        }
+
+        .stat-comparison:hover {
+            border-left-color: #ff5500;
+            background: #1f1f1f;
+        }
+
+        .stat-comparison strong {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .stat-comparison span {
+            color: #ff5500;
+            font-weight: 700;
+        }
+
+        .autocomplete-results {
+            position: absolute;
+            top: calc(100% + 2px);
+            left: 0;
+            right: 0;
+            background: #242424;
+            border: 2px solid #333333;
+            border-top: 2px solid #ff5500;
+            border-radius: 0 0 6px 6px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 85, 0, 0.3);
+        }
+
+        .autocomplete-results::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .autocomplete-results::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .autocomplete-results::-webkit-scrollbar-thumb {
+            background: #ff5500;
+            border-radius: 4px;
+        }
+
+        .autocomplete-results::-webkit-scrollbar-thumb:hover {
+            background: #ff6600;
+        }
+
+        .autocomplete-results.active {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 16px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.2s ease;
+            min-height: 70px;
+        }
+
+        .autocomplete-item:hover {
+            background: linear-gradient(90deg, #2d2d2d 0%, #2a2a2a 100%);
+            border-left: 5px solid #ff5500;
+            padding-left: 20px;
+            box-shadow: inset 0 0 20px rgba(255, 85, 0, 0.1);
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #333333;
+            flex-shrink: 0;
+        }
+
+        .autocomplete-info {
+            flex: 1;
+        }
+
+        .autocomplete-nickname {
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 1.1em;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .autocomplete-details {
+            font-size: 0.95em;
+            color: #aaaaaa;
+            font-weight: 500;
+        }
+
+        #ai-analysis {
+            white-space: pre-line;
+            line-height: 1.8;
+            color: #d4d4d4;
+            font-weight: 500;
+        }
+
+        #ai-analysis::before {
+            content: '';
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        /* Style the AI analysis text for better formatting */
+        @supports (display: contents) {
+            #ai-analysis {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .header {
+                padding: 35px 25px;
+            }
+
+            .content {
+                padding: 30px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .player-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .probabilities {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .predicted-class {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 FACEIT CS2 PLAYER CLASSIFIER</h1>
+            <p>Discover your skill level and get personalized improvement tips</p>
+        </div>
+
+        <div class="content">
+            <div class="search-box">
+                <label for="nickname">Enter FACEIT Nickname</label>
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <input type="text" id="nickname" placeholder="e.g., s1mple" autocomplete="off"
+                            oninput="searchPlayers()">
+                        <div class="autocomplete-results" id="autocompleteResults"></div>
+                    </div>
+                    <button class="btn" onclick="analyzePlayer()">Analyze</button>
+                </div>
+            </div>
+
+            <div class="error" id="error"></div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing player data...</p>
+            </div>
+
+            <div class="results" id="results">
+                <div class="player-card">
+                    <div class="player-info">
+                        <div>
+                            <div class="player-name" id="playerName"></div>
+                            <div class="player-country" id="playerCountry"></div>
+                        </div>
+                    </div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">ELO Rating</div>
+                            <div class="stat-value" id="playerElo"></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Level</div>
+                            <div class="stat-value" id="playerLevel"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="prediction-card">
+                    <div class="prediction-label">Player Classification</div>
+                    <div class="predicted-class" id="predictedClass"></div>
+                    <div class="confidence">Confidence: <strong id="confidence"></strong></div>
+
+                    <div class="probabilities" id="probabilities"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📊 Performance Statistics</div>
+                    <div id="statistics"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">💪 Strengths</div>
+                    <div id="strengths"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📉 Areas for Improvement</div>
+                    <div id="weaknesses"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">🤖 AI Coach Insights</div>
+                    <div id="ai-analysis"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">💡 Recommendations</div>
+                    <div id="recommendations"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let searchTimeout;
+        let selectedPlayer = null;
+
+        async function searchPlayers() {
+            const query = document.getElementById('nickname').value.trim();
+            const resultsDiv = document.getElementById('autocompleteResults');
+
+            selectedPlayer = null;
+            clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                resultsDiv.classList.remove('active');
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+
+                    const players = data.players?.results || [];
+
+                    if (players.length > 0) {
+                        resultsDiv.innerHTML = players.map(player => {
+                            const cs2Game = player.games?.find(g => g.name === 'cs2');
+                            const level = cs2Game ? `Level ${cs2Game.skill_level}` : 'No CS2';
+                            const country = player.country || '??';
+                            // FACEIT default avatar - orange background with white icon
+                            const defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50"%3E%3Crect width="50" height="50" fill="%23ff5500"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".35em" fill="white" font-size="24" font-weight="bold" font-family="Arial"%3EF%3C/text%3E%3C/svg%3E';
+                            const avatar = player.avatar || defaultAvatar;
+
+                            return `
+                                <div class="autocomplete-item" onclick='selectPlayer(${JSON.stringify(player).replace(/'/g, "&#39;")})'>
+                                    <img src="${avatar}" 
+                                         class="autocomplete-avatar" 
+                                         onerror="this.src='${defaultAvatar}'">
+                                    <div class="autocomplete-info">
+                                        <div class="autocomplete-nickname">${player.nickname}</div>
+                                        <div class="autocomplete-details">🌍 ${country} • ${level}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        resultsDiv.classList.add('active');
+                    } else {
+                        resultsDiv.innerHTML = '<div class="autocomplete-item" style="color: #aaaaaa;">No players found</div>';
+                        resultsDiv.classList.add('active');
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
+                    resultsDiv.classList.remove('active');
+                }
+            }, 300);
+        }
+
+        function selectPlayer(player) {
+            selectedPlayer = player;
+            document.getElementById('nickname').value = player.nickname;
+            document.getElementById('autocompleteResults').classList.remove('active');
+            console.log('Selected player:', player.nickname);
+        }
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.input-group')) {
+                document.getElementById('autocompleteResults').classList.remove('active');
+            }
+        });
+
+        async function analyzePlayer() {
+            const nickname = document.getElementById('nickname').value.trim();
+
+            if (!nickname) {
+                showError('Please enter a FACEIT nickname');
+                return;
+            }
+
+            if (!selectedPlayer) {
+                showError('Please select a player from the dropdown list');
+                return;
+            }
+
+            hideError();
+            hideResults();
+            showLoading();
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nickname: selectedPlayer.nickname })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'An error occurred');
+                }
+
+                displayResults(data);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayResults(data) {
+            document.getElementById('playerName').textContent = data.player.nickname;
+            document.getElementById('playerCountry').textContent = `🌍 ${data.player.country}`;
+            document.getElementById('playerElo').textContent = data.player.elo;
+            document.getElementById('playerLevel').textContent = data.player.level;
+
+            document.getElementById('predictedClass').textContent = data.prediction.class;
+            document.getElementById('confidence').textContent = data.prediction.confidence.toFixed(2) + '%';
+
+            const probContainer = document.getElementById('probabilities');
+            probContainer.innerHTML = '';
+            for (const [className, prob] of Object.entries(data.prediction.probabilities)) {
+                const deg = (prob / 100) * 360;
+                probContainer.innerHTML += `
+                    <div class="prob-item">
+                        <div class="prob-label">${className}</div>
+                        <div class="prob-bar" style="background: conic-gradient(#ff5500 ${deg}deg, #2a2a2a ${deg}deg);">
+                            <div class="prob-value">${prob.toFixed(1)}%</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const statsContainer = document.getElementById('statistics');
+            statsContainer.innerHTML = '';
+            for (const [key, value] of Object.entries(data.statistics)) {
+                const displayValue = typeof value === 'number' ? value.toFixed(2) : value;
+                statsContainer.innerHTML += `
+                    <div class="stat-comparison">
+                        <strong>${key}:</strong>
+                        <span>${displayValue}</span>
+                    </div>
+                `;
+            }
+
+            const strengthsContainer = document.getElementById('strengths');
+            if (data.analysis.strengths && data.analysis.strengths.length > 0) {
+                strengthsContainer.innerHTML = data.analysis.strengths.map(s => `
+                    <span class="badge badge-strength">
+                        ${s.metric}: ${s.value} (Class avg: ${s.class_avg})
+                    </span>
+                `).join('');
+            } else {
+                strengthsContainer.innerHTML = '<p style="color: #aaaaaa;">Keep working to develop your strengths!</p>';
+            }
+
+            const weaknessesContainer = document.getElementById('weaknesses');
+            if (data.analysis.weaknesses && data.analysis.weaknesses.length > 0) {
+                weaknessesContainer.innerHTML = data.analysis.weaknesses.map(w => `
+                    <span class="badge badge-weakness">
+                        ${w.metric}: ${w.value} (Class avg: ${w.class_avg})
+                    </span>
+                `).join('');
+            } else {
+                weaknessesContainer.innerHTML = '<p style="color: #aaaaaa;">Great job! No significant weaknesses detected.</p>';
+            }
+
+            const recsContainer = document.getElementById('recommendations');
+            if (data.analysis.recommendations && data.analysis.recommendations.length > 0) {
+                recsContainer.innerHTML = data.analysis.recommendations.map(r => `
+                    <div class="recommendation">💡 ${r}</div>
+                `).join('');
+            } else {
+                recsContainer.innerHTML = '<div class="recommendation">💡 Keep up the great work!</div>';
+            }
+
+            const aiContainer = document.getElementById('ai-analysis');
+            if (data.ai_analysis) {
+                // Format the AI analysis text with better styling
+                let formattedText = data.ai_analysis;
+
+                // Split into lines for better processing
+                const lines = formattedText.split('\n');
+                const formattedLines = lines.map(line => {
+                    // Skip empty lines
+                    if (!line.trim()) return '<br>';
+
+                    // Check for emoji headers (🎯, 💪, etc.)
+                    if (/^(🎯|💪|📊|🎓|⚡|🔥|📈|💡|🎮|🏆)/.test(line)) {
+                        return `<div style="color: #ffffff; font-size: 1.15em; font-weight: 800; margin-top: 15px; margin-bottom: 10px;">${line}</div>`;
+                    }
+
+                    // Check for bullet points
+                    if (line.trim().startsWith('•')) {
+                        const parts = line.split(' - ');
+                        if (parts.length > 1) {
+                            return `<div style="margin-left: 10px; margin-bottom: 8px;"><span style="color: #ff5500; font-weight: 700;">•</span> ${parts[0].substring(parts[0].indexOf('•') + 1).trim()}<strong style="color: #ff5500;"> - </strong>${parts.slice(1).join(' - ')}</div>`;
+                        }
+                        return `<div style="margin-left: 10px; margin-bottom: 8px;"><span style="color: #ff5500; font-weight: 700;">•</span> ${line.substring(line.indexOf('•') + 1).trim()}</div>`;
+                    }
+
+                    // Check for arrows
+                    if (line.trim().startsWith('→')) {
+                        return `<div style="margin-left: 30px; margin-bottom: 6px; color: #bbbbbb;"><span style="color: #ff5500; font-weight: 700;">→</span> ${line.substring(line.indexOf('→') + 1).trim()}</div>`;
+                    }
+
+                    // Check for numbered lists
+                    if (/^\d+\./.test(line.trim())) {
+                        const match = line.match(/^(\d+\.)(.+)/);
+                        if (match) {
+                            const parts = match[2].split(':');
+                            if (parts.length > 1) {
+                                return `<div style="margin-left: 10px; margin-bottom: 8px;"><span style="color: #ff5500; font-weight: 700;">${match[1]}</span><strong style="color: #ffffff;">${parts[0]}<strong style="color: #ff5500;">:</strong></strong>${parts.slice(1).join(':')}</div>`;
+                            }
+                            return `<div style="margin-left: 10px; margin-bottom: 8px;"><span style="color: #ff5500; font-weight: 700;">${match[1]}</span> ${match[2].trim()}</div>`;
+                        }
+                    }
+
+                    // Check for lines with colons (like "Focus: ...")
+                    if (line.includes(':') && !line.trim().startsWith('•')) {
+                        const parts = line.split(':');
+                        if (parts.length > 1) {
+                            return `<div style="margin-bottom: 8px;"><strong style="color: #ffffff;">${parts[0]}<strong style="color: #ff5500;">:</strong></strong>${parts.slice(1).join(':')}</div>`;
+                        }
+                    }
+
+                    // Regular line with dash separation
+                    if (line.includes(' - ')) {
+                        const parts = line.split(' - ');
+                        return `<div style="margin-bottom: 8px;">${parts[0]}<strong style="color: #ff5500;"> - </strong>${parts.slice(1).join(' - ')}</div>`;
+                    }
+
+                    // Default line
+                    return `<div style="margin-bottom: 8px;">${line}</div>`;
+                });
+
+                aiContainer.innerHTML = formattedLines.join('');
+            } else {
+                aiContainer.innerHTML = '<span style="color: #aaaaaa; font-style: italic;">AI Coach is currently unavailable.</span>';
+            }
+
+            showResults();
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.classList.add('active');
+        }
+
+        function hideError() {
+            document.getElementById('error').classList.remove('active');
+        }
+
+        function showResults() {
+            document.getElementById('results').classList.add('active');
+        }
+
+        function hideResults() {
+            document.getElementById('results').classList.remove('active');
+        }
+
+        document.getElementById('nickname').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (!selectedPlayer) {
+                    showError('Please select a player from the dropdown list');
+                } else {
+                    analyzePlayer();
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

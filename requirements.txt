@@ -3,7 +3,7 @@ numpy
 pandas
 scikit-learn
 xgboost
-tensorflow
+tensorflow[and-cuda]
 
 # Web Scraping & API
 requests
@@ -19,6 +19,12 @@ flask-cors
 matplotlib
 seaborn
 
+# AI Coach (Local LLM)
+torch
+transformers
+accelerate
+bitsandbytes
+
 # Utilities
 tqdm
 joblib
@@ -27,6 +33,9 @@ joblib
 jupyter
 notebook
 python-dotenv
+
+# SMOTE
+imblearn
 
 # # Core ML Libraries
 # numpy==1.24.3

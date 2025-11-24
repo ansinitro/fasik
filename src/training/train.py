@@ -359,11 +359,11 @@ def train_xgboost(X_train, y_train, X_val, y_val):
     
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     
-    print("🔍 RandomizedSearch (50 iterations)...")
+    print("🔍 RandomizedSearch (500 iterations)...")
     random_search = RandomizedSearchCV(
         base_model,
         param_grid,
-        n_iter=50,
+        n_iter=500,
         cv=skf,
         scoring='f1_macro',
         n_jobs=-1,

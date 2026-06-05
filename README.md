@@ -1,11 +1,20 @@
-# 🎮 Fasik: CS:GO Player Classifier
+# 🎮 Fasik: CS2 Player Classifier
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-2.3-green.svg)
 ![Scikit-Learn](https://img.shields.io/badge/scikit--learn-1.3-orange.svg)
+![XGBoost](https://img.shields.io/badge/XGBoost-Latest-red.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-**Fasik** is an AI-powered machine learning system that analyzes Counter-Strike 2 players on FACEIT. It classifies players into three skill categories (**PRO**, **HIGH-LEVEL**, **NORMAL**) and provides personalized performance analysis and improvement recommendations.
+**Fasik** is an AI-powered machine learning system that analyzes Counter-Strike 2 players on FACEIT. It classifies players into three skill categories (**PRO**, **HIGH-LEVEL**, **NORMAL**) and provides personalized performance analysis, stat comparisons, and AI-driven improvement recommendations.
+
+---
+
+## 🎥 Video Demonstration
+
+Check out this demonstration of Fasik analyzing a professional player ("ZywOo") followed by a normal player ("Qydnama"):
+
+![Fasik Demo](assets/demo.mp4)
 
 ---
 
@@ -31,7 +40,23 @@ This project demonstrates a complete end-to-end machine learning pipeline:
 *   ✅ **Real-time Classification**: Instantly predicts if a player is performing at a Pro, High, or Normal level.
 *   ✅ **Deep Stat Analysis**: Breaks down K/D, Headshot %, Win Rate, and more.
 *   ✅ **Smart Feedback**: Identifies strengths and weaknesses based on ML patterns.
-*   ✅ **Live Search**: Look up any FACEIT player by nickname.
+*   ✅ **Live Search**: Look up any FACEIT player by nickname with autocomplete.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    A[User via Browser] -->|Searches Player| B(Flask App app.py)
+    B -->|Fetches Stats| C{FACEIT API}
+    C -->|Returns Data| B
+    B -->|Extracts Features| D[Feature Pipeline]
+    D -->|Inference| E[ML Model XGBoost/Ensemble]
+    E -->|Class Prediction| B
+    B -->|Generates Insights| F[AI Coach Analysis]
+    F -->|Returns HTML| A
+```
 
 ---
 

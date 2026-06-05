@@ -57,8 +57,18 @@ try:
     scaler = joblib.load("models/scaler.pkl")
     label_encoder = joblib.load("models/label_encoder.pkl")
     
-    with open("data/feature_names.json", "r") as f:
-        feature_names = json.load(f)
+    try:
+        with open("data/feature_names.json", "r") as f:
+            feature_names = json.load(f)
+    except FileNotFoundError:
+        print("⚠️ feature_names.json not found, extracting from scaler...")
+        if hasattr(scaler, 'feature_names_in_'):
+            feature_names = scaler.feature_names_in_.tolist()
+            os.makedirs("data", exist_ok=True)
+            with open("data/feature_names.json", "w") as f:
+                json.dump(feature_names, f, indent=2)
+        else:
+            raise FileNotFoundError("feature_names.json not found and scaler does not contain feature names.")
     
     with open("models/best_model.txt", "r") as f:
         best_model_name = f.read().strip()
@@ -76,8 +86,12 @@ try:
         model = joblib.load("models/logistic_regression.pkl")
     
     # Load class statistics for analysis
-    with open("data/class_statistics.json", "r") as f:
-        class_stats = json.load(f)
+    try:
+        with open("data/class_statistics.json", "r") as f:
+            class_stats = json.load(f)
+    except FileNotFoundError:
+        print("⚠️ class_statistics.json not found, analysis will be limited")
+        class_stats = {}
     
     print(f"✅ Loaded {best_model_name} model")
     print("✅ All components loaded successfully!")
@@ -264,7 +278,7 @@ def analyze_player(features, predicted_class, probabilities):
     
     # Get class statistics
     class_name = label_encoder.classes_[predicted_class]
-    class_avg = class_stats[class_name]
+    class_avg = class_stats.get(class_name, {})
     
     # Define important metrics
     metrics_to_check = {

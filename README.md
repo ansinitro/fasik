@@ -14,7 +14,7 @@
 
 Check out this demonstration of Fasik analyzing a professional player ("ZywOo") followed by a normal player ("Qydnama"):
 
-<video src="assets/demo.mp4" width="100%" controls autoplay loop muted></video>
+<video src="https://github.com/ansinitro/fasik/raw/main/assets/demo.mp4" width="100%" controls autoplay loop muted></video>
 
 ---
 
